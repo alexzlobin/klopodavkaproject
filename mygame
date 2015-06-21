@@ -1,0 +1,334 @@
+import tkinter
+from tkinter import *
+root=Tk()
+counter=0
+k="red"
+w=800
+h=550
+a=[[0]*((w-50)//25) for x in range ((h-50)//25)]
+a[2][2]=2
+a[-3][-3]=1
+windows=[0]
+#0=пустая клетка
+#1=главный красный
+#2=главный синий
+#3=красный 
+#4=синий
+#5=мертвый красный
+#6=мертвый синий
+c = tkinter.Canvas(width=w, height=h)
+for x in  range (25,w-25,25):
+    for y in range (25,h-25,25):
+        if (x+y)%100:
+            color = "white"
+        else:
+            color = "white"
+        c.create_rectangle(x,y,x+25,y+25,fill=color)
+
+c.create_oval(75,75,100,100 ,fill="blue")
+c.create_oval(84,84,91,91,fill="yellow")
+c.create_oval(w-100,h-100,w-75,h-75,fill="red")
+c.create_oval(w-91,h-91,w-84,h-84,fill="black")
+def sosedi(m,n):#выписываем всех соседей данной клетки
+	if 0<m<((w-50)//25)-1 and 0<n<((h-50)//25)-1:
+		return [(m-1,n+1),(m-1,n),(m-1,n-1),(m,n-1),(m,n+1),(m+1,n-1),(m+1,n),(m+1,n+1)]
+	elif n==0 and m!=0 and m!=((w-50)//25)-1:
+		return [(m-1,n+1),(m-1,n),(m,n+1),(m+1,n),(m+1,n+1)]
+	elif m==((w-50)//25)-1 and 0<n<((h-50)//25)-1:
+		return [(m-1,n+1),(m-1,n),(m-1,n-1),(m,n-1),(m,n+1)]
+	elif n==((h-50)//25)-1 and  0<m<((w-50)//25)-1:
+		return [(m-1,n),(m-1,n-1),(m,n-1),(m+1,n-1),(m+1,n)]
+	elif m==0 and 0<n<((h-50)//25)-1:
+		return [(m,n-1),(m,n+1),(m+1,n-1),(m+1,n),(m+1,n+1)]
+	elif m==0 and n==0 :
+		return [(1,1),(1,0),(0,1)]
+	elif m==0 and n==((h-50)//25)-1:
+		return [(m+1,n-1),(m+1,n),(m,n-1)]
+	elif m==((w-50)//25)-1 and n==((h-50)//25)-1:
+		return [(m-1,n),(m-1,n-1),(m,n-1)]
+	else :
+		return [(m-1,1),(m-1,0),(m,1)]
+def error_messege(root, text):#вывод окна уведомления
+	if windows[0] != 0:
+		windows[0].destroy()
+	win = Toplevel(root, relief=SUNKEN, bd=10, bg="red")
+	win.minsize(width=400, height=200)
+	lab_3 = Label(win, text = text , font="Arial 18", bg = 'red')
+	lab_3.pack()
+	but_1 = Button(win)
+	but_1['text'] = 'OK'
+	but_1['bg'] = 'blue'
+	but_1['fg'] = 'black'
+	but_1.bind('<Button-1>', OK)
+	but_1.pack()
+	windows[0] = win
+def OK(event):
+	windows[0].destroy()
+error_messege(root,"красные ходят первые")
+
+def hodblue(m,n,x,y):
+	
+	global k
+	global counter
+	if a[n][m]==0 or a[n][m]==3:
+		neighbours={(m,n)}
+		b=set()
+		enemies=set()
+		l=0
+		while neighbours and l!=2:
+			neighbours|=b
+			neighbours-=enemies
+			for s in neighbours:
+				if a[s[1]][s[0]]==2:
+					l=2
+					if a[n][m]==0:
+						colour4(x,y)
+						a[n][m]=4
+						break
+					else:
+						colour5(x,y)
+						a[n][m]=5
+						break
+				enemies.add(s)
+				g=set(sosedi(s[0],s[1]))
+				g-=enemies
+				for ss in g:
+					enemies.add(ss)
+					l=a[ss[1]][ss[0]]
+					if l==2 and a[n][m]==0:
+						colour4(x,y)
+						a[n][m]=4
+						break
+					elif l==2:
+						colour5(x,y)
+						a[n][m]=5
+						break
+					elif l==4 or l==5:
+						b|=set(sosedi(ss[0],ss[1]))
+				if l==2:
+					break
+		if not neighbours:
+			error_messege(root,"ход невозможен")
+		if l==2:
+			counter+=1		
+		if counter==4:
+			counter=0
+			k="red"
+			error_messege(root,"ход красных")
+		if k=="red":
+			way={(27,17)}
+			pit=set()
+			l=1
+			b=set()
+			while way and l!=0 and l!=4:
+				way|=b 
+				way-=pit
+				for s in way :
+					pit.add(s)
+					if a[s[1]][s[0]]==0 or a[s[1]][s[0]]==4:
+						l=0
+						break
+					elif a[s[1]][s[0]] == 1 or a[s[1]][s[0]]==3 or a[s[1]][s[0]]==6:
+						g=set(sosedi(s[0],s[1]))
+						g-=pit
+						for ss in g:
+							pit.add(ss)
+							l=a[ss[1]][ss[0]]
+							if l==3 or l==6:
+								b|=set(sosedi(ss[0],ss[1]))
+							elif l==0 or l==4:
+								break
+					if l==0 or l==4:
+						break 
+			if not way:
+				error_messege(root,"красные проиграли")
+				k="end"
+		else:
+			way={(2,2)}
+			pit=set()
+			l=1
+			b=set()
+			while way and l!=0 and l!=3:
+				way|=b
+				way-=pit
+				for s in way :
+					pit.add(s)
+					if a[s[1]][s[0]]==0 or a[s[1]][s[0]]==3:
+						l=0
+						break
+					elif a[s[1]][s[0]] == 2 or a[s[1]][s[0]]==4 or a[s[1]][s[0]]==5:
+						g=set(sosedi(s[0],s[1]))
+						g-=pit
+						g=set(sosedi(s[0],s[1]))
+						g-=pit
+						for ss in g:
+							pit.add(ss)
+							l=a[ss[1]][ss[0]]
+							if l==4 or l==5:
+								b|=set(sosedi(ss[0],ss[1]))
+							elif l==0 or l==3:
+								break
+					if l==0 or l==3:
+						break
+			if not way:
+				error_messege(root,"синие проиграли")
+				k="end"			
+	else:
+		error_messege(root,"ход невозможен")
+def hodred(m,n,x,y):
+	global k
+	global counter
+	if a[n][m]==0 or a[n][m]==4:
+		neighbours={(m,n)}
+		b=set()
+		enemies=set()
+		l=0
+		while neighbours and l!=1:
+			neighbours|=b
+			neighbours-=enemies
+			for s in neighbours:
+				if a[s[1]][s[0]]==1:
+					l=1
+					if a[n][m]==0:
+						colour3(x,y)
+						a[n][m]=3
+						break
+					else:
+						colour6(x,y)
+						a[n][m]=6
+						break
+				enemies.add(s)
+				g=set(sosedi(s[0],s[1]))
+				g-=enemies
+				for ss in g:
+					enemies.add(ss)
+					l=a[ss[1]][ss[0]]
+					if l==1 and a[n][m]==0:
+						colour3(x,y)
+						a[n][m]=3
+						break
+					elif l==1:
+						colour6(x,y)
+						a[n][m]=6
+						break
+					elif l==3 or l==6:
+						b|=set(sosedi(ss[0],ss[1]))
+				if l==1:
+					break
+		if not neighbours:
+			error_messege(root,"ход невозможен")
+		if l==1:
+			counter+=1		
+		if counter==4:
+			counter=0
+			k="blue"
+			error_messege(root,"ход синих")
+		if k=="red":
+			way={(27,17)}
+			pit=set()
+			l=1
+			b=set()
+			while way and l!=0 and l!=4:
+				way|=b 
+				way-=pit
+				for s in way :
+					pit.add(s)
+					if a[s[1]][s[0]]==0 or a[s[1]][s[0]]==4:
+						l=0
+						break
+					elif a[s[1]][s[0]] == 1 or a[s[1]][s[0]]==3 or a[s[1]][s[0]]==6:
+						g=set(sosedi(s[0],s[1]))
+						g-=pit
+						for ss in g:
+							pit.add(ss)
+							l=a[ss[1]][ss[0]]
+							if l==3 or l==6:
+								b|=set(sosedi(ss[0],ss[1]))
+							elif l==0 or l==4:
+								break
+					if l==0 or l==4:
+						break 
+			if not way:
+				error_messege(root,"красные проиграли")
+				k="end"
+		else:
+			way={(2,2)}
+			pit=set()
+			l=1
+			b=set()
+			while way and l!=0 and l!=3:
+				way|=b
+				way-=pit
+				for s in way :
+					pit.add(s)
+					if a[s[1]][s[0]]==0 or a[s[1]][s[0]]==3:
+						l=0
+						break
+					elif a[s[1]][s[0]] == 2 or a[s[1]][s[0]]==4 or a[s[1]][s[0]]==5:
+						g=set(sosedi(s[0],s[1]))
+						g-=pit
+						g=set(sosedi(s[0],s[1]))
+						g-=pit
+						for ss in g:
+							pit.add(ss)
+							l=a[ss[1]][ss[0]]
+							if l==4 or l==5:
+								b|=set(sosedi(ss[0],ss[1]))
+							elif l==0 or l==3:
+								break
+					if l==0 or l==3:
+						break
+			if not way:
+				error_messege(root,"синие проиграли")
+				k="end"			
+	else:
+		error_messege(root,"ход невозможен")
+def hod(event):
+	c = event.widget
+	m=(event.x)//25-1
+	n=(event.y)//25-1
+	x=event.x
+	y=event.y
+	if k=="red":
+		hodred(m,n,x,y)
+	elif k=="blue":
+		hodblue(m,n,x,y)
+	else:
+		return
+#функции,отвечающие за перекраску клеток
+def colour6(x,y):
+	if 75<=x<=100 and 75<=y<=100 or w-100<=x<=w-75 and h-100<=y<=h-75 or x<25 or x>w-25 or y<25 or y>h-25	:
+		pass
+			
+	else:
+
+
+		c.create_rectangle(x//25*25,y//25*25,x//25*25+25,y//25*25+25,fill="red")
+
+def colour3(x,y):
+
+	if 75<=x<=100 and 75<=y<=100 or w-100<=x<=w-75 and h-100<=y<=h-75 or x<25 or x>w-25 or y<25 or y>h-25	:
+		pass
+			
+	else:
+		c.create_oval(x//25*25,y//25*25,x//25*25+25,y//25*25+25,fill="red")	
+def colour5(x,y):
+	
+	if 75<=x<=100 and 75<=y<=100 or w-100<=x<=w-75 and h-100<=y<=h-75 or x<25 or x>w-25 or y<25 or y>h-25	:
+		pass
+			
+	else:
+		c.create_rectangle(x//25*25,y//25*25,x//25*25+25,y//25*25+25,fill="blue")
+
+def colour4(x,y):
+
+	if 75<=x<=100 and 75<=y<=100 or w-100<=x<=w-75 and h-100<=y<=h-75 or x<25 or x>w-25 or y<25 or y>h-25	:
+		pass
+			
+	else:
+		c.create_oval(x//25*25,y//25*25,x//25*25+25,y//25*25+25,fill="blue")
+
+c.pack()
+c.bind("<Button-1>",hod)
+root.mainloop()
+c.mainloop()
